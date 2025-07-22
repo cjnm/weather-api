@@ -1567,19 +1567,22 @@ var getWeatherByLocation = /* @__PURE__ */ __name(async (c) => {
     try {
       const ai = c.env.AI;
       if (ai) {
-        const { response: fact } = await ai.run("llama-3-8b-instruct-awq", {
-          messages: [
-            {
-              role: "system",
-              content: "You are a helpful assistant that provides brief, interesting facts about locations."
-            },
-            {
-              role: "user",
-              content: `Share one interesting fact about ${location} in 1-2 sentences.`
-            }
-          ],
-          max_tokens: 100
-        });
+        const { response: fact } = await ai.run(
+          "@cf/meta/llama-3-8b-instruct-awq",
+          {
+            messages: [
+              {
+                role: "system",
+                content: "You are a helpful assistant that provides brief, interesting facts about locations."
+              },
+              {
+                role: "user",
+                content: `Share one interesting fact about ${location} in 1-2 sentences.`
+              }
+            ],
+            max_tokens: 100
+          }
+        );
         locationFact = fact.trim();
       }
     } catch (error) {
