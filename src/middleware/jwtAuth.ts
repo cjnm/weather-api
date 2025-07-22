@@ -1,10 +1,17 @@
 import { MiddlewareHandler } from "hono";
 
+type Variables = {
+  user: any;
+};
 /**
  * JWT Authentication middleware
  * Verifies the JWT token in the Authorization header
  */
-export const jwtAuth = (): MiddlewareHandler<{ Bindings: Env }> => {
+
+export const jwtAuth = (): MiddlewareHandler<{
+  Bindings: Env;
+  Variables: Variables;
+}> => {
   return async (c, next) => {
     const authHeader = c.req.header("Authorization");
 
