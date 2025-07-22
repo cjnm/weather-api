@@ -5,13 +5,10 @@ import { jwtAuth } from "../../middleware/jwtAuth";
 
 // Create a router for weather endpoints
 export const weatherRouter = new Hono<{ Bindings: Env }>();
-const app = new Hono<{ Bindings: Env }>();
 
-// Apply JWT middleware to the London endpoint
-app.use("/london", jwtAuth());
-
-// Public endpoint - Get weather by location
-weatherRouter.get("/:location", getWeatherByLocation);
-
+// IMPORTANT: Protected endpoint must come BEFORE the dynamic route
 // Protected endpoint - Get weather in London (requires JWT)
-weatherRouter.get("/london", getWeatherLondon);
+weatherRouter.get("/london", jwtAuth(), getWeatherLondon);
+
+// Public endpoint - Get weather by location (this catches all other locations)
+weatherRouter.get("/:location", getWeatherByLocation);
