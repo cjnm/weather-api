@@ -1,5 +1,6 @@
 import { Handler } from "hono";
-import { WeatherApiResponse } from "../../types";
+import { fetchWeatherData, formatWeatherData } from "../../helpers/weather";
+import { generateLocationFact } from "../../helpers/ai";
 
 /**
  * Get weather information for London
@@ -9,36 +10,30 @@ export const getWeatherLondon: Handler<{ Bindings: Env }> = async (c) => {
   try {
     // JWT authentication is handled by middleware
 
-    // Fetch weather data from OpenWeatherMap API
+    // Fetch weather data using helper
     const apiKey = c.env.OPENWEATHER_API_KEY || "demo";
-    const weatherResponse = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=London,uk&units=metric&appid=${apiKey}`
-    );
+    let weatherData;
 
-    if (!weatherResponse.ok) {
+    try {
+      weatherData = await fetchWeatherData("London,uk", apiKey);
+    } catch (error) {
       return c.json(
         { success: false, error: "Failed to fetch weather data for London" },
         500
       );
     }
 
-    const weatherData = (await weatherResponse.json()) as WeatherApiResponse;
+    // Generate location fact using AI helper
+    const locationFact = await generateLocationFact("London,uk", c.env.AI);
 
-    // Return the weather data
+    // Format and return the response
+    const formattedWeather = formatWeatherData(weatherData);
+
     return c.json({
       success: true,
       data: {
-        location: "London",
-        country: "GB",
-        weather: {
-          description: weatherData.weather[0].description,
-          temperature: weatherData.main.temp,
-          feels_like: weatherData.main.feels_like,
-          humidity: weatherData.main.humidity,
-          wind_speed: weatherData.wind.speed,
-        },
-        message:
-          "This is a protected endpoint that requires JWT authentication",
+        ...formattedWeather,
+        fact: locationFact,
       },
     });
   } catch (error) {

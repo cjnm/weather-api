@@ -1,5 +1,6 @@
 import { Handler } from "hono";
-import { WeatherApiResponse } from "../../types";
+import { fetchWeatherData, formatWeatherData } from "../../helpers/weather";
+import { generateLocationFact } from "../../helpers/ai";
 
 /**
  * Get weather information for a specific location
@@ -15,76 +16,29 @@ export const getWeatherByLocation: Handler<{ Bindings: Env }> = async (c) => {
       return c.json({ success: false, error: "Location is required" }, 400);
     }
 
-    // Fetch weather data from OpenWeatherMap API
+    // Fetch weather data using helper
     const apiKey = c.env.OPENWEATHER_API_KEY || "demo";
-    const weatherResponse = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
-        location
-      )}&units=metric&appid=${apiKey}`
-    );
+    let weatherData;
 
-    if (!weatherResponse.ok) {
-      if (weatherResponse.status === 404) {
-        return c.json(
-          {
-            success: false,
-            error: `Weather data not found for location: ${location}`,
-          },
-          404
-        );
-      }
-      return c.json(
-        { success: false, error: "Failed to fetch weather data" },
-        500
-      );
-    }
-
-    const weatherData = (await weatherResponse.json()) as WeatherApiResponse;
-
-    // Generate a fact about the location using Cloudflare AI
-    let locationFact = null;
     try {
-      const ai = c.env.AI;
-
-      if (ai) {
-        const { response: fact } = await ai.run(
-          "@cf/meta/llama-3-8b-instruct-awq",
-          {
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are a helpful assistant that provides brief, interesting facts about locations.",
-              },
-              {
-                role: "user",
-                content: `Share one interesting fact about ${location} in 1-2 sentences.`,
-              },
-            ],
-            max_tokens: 100,
-          }
-        );
-
-        locationFact = fact.trim();
-      }
+      weatherData = await fetchWeatherData(location, apiKey);
     } catch (error) {
-      console.error("AI fact generation failed:", error);
-      // Don't fail the request if AI fact generation fails
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to fetch weather data";
+      const statusCode = errorMessage.includes("not found") ? 404 : 500;
+      return c.json({ success: false, error: errorMessage }, statusCode);
     }
 
-    // Return the weather data and location fact
+    // Generate location fact using AI helper
+    const locationFact = await generateLocationFact(location, c.env.AI);
+
+    // Format and return the response
+    const formattedWeather = formatWeatherData(weatherData);
+
     return c.json({
       success: true,
       data: {
-        location: weatherData.name,
-        country: weatherData.sys.country,
-        weather: {
-          description: weatherData.weather[0].description,
-          temperature: weatherData.main.temp,
-          feels_like: weatherData.main.feels_like,
-          humidity: weatherData.main.humidity,
-          wind_speed: weatherData.wind.speed,
-        },
+        ...formattedWeather,
         fact: locationFact,
       },
     });
