@@ -12,6 +12,9 @@
 		"database_name": "qeather-api",
 		"database_id": "4fb4caf0-85bd-4a0f-9fc9-68a1ecaa05d3"
 	  }
-	]
+	],
+	"ai": {
+		"binding": "AI"
+	  }
   }
   
