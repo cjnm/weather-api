@@ -31,7 +31,8 @@ A simple weather API built with Cloudflare Workers that provides weather informa
 
 - `GET /weather/:location` - Get weather information for a specific location
   - Example: `GET /weather/new-york`
-  - Returns weather data and an AI-generated fact about the location
+  - Returns weather data and an **AI-generated fact** about the location
+  - **AI Feature**: Uses Cloudflare AI (Llama 2 model) to generate interesting facts about the requested location
 
 #### Protected Endpoints
 
