@@ -49,11 +49,4 @@ export class WeatherLocationOpenAPI extends OpenAPIRoute {
       },
     },
   };
-
-  async handle(request: Request, env: Env, context: any, data: any) {
-    // This is just for documentation - actual implementation is in the main app
-    return new Response("This endpoint is for documentation only", {
-      status: 501,
-    });
-  }
 }
