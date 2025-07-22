@@ -1,6 +1,4 @@
 import { Handler } from "hono";
-import { ApiException } from "chanfana";
-import { z } from "zod";
 import { WeatherApiResponse } from "../../types";
 
 /**
@@ -14,12 +12,11 @@ export const getWeatherByLocation: Handler<{ Bindings: Env }> = async (c) => {
     const location = c.req.param("location");
 
     if (!location) {
-      throw new ApiException("Location is required");
+      return c.json({ success: false, error: "Location is required" }, 400);
     }
 
     // Fetch weather data from OpenWeatherMap API
-    // Using their free tier API
-    const apiKey = c.env.OPENWEATHER_API_KEY || "demo"; // Fallback to demo key
+    const apiKey = c.env.OPENWEATHER_API_KEY || "demo";
     const weatherResponse = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
         location
@@ -28,11 +25,18 @@ export const getWeatherByLocation: Handler<{ Bindings: Env }> = async (c) => {
 
     if (!weatherResponse.ok) {
       if (weatherResponse.status === 404) {
-        throw new ApiException(
-          `Weather data not found for location: ${location}`
+        return c.json(
+          {
+            success: false,
+            error: `Weather data not found for location: ${location}`,
+          },
+          404
         );
       }
-      throw new ApiException("Failed to fetch weather data");
+      return c.json(
+        { success: false, error: "Failed to fetch weather data" },
+        500
+      );
     }
 
     const weatherData = (await weatherResponse.json()) as WeatherApiResponse;
@@ -40,7 +44,6 @@ export const getWeatherByLocation: Handler<{ Bindings: Env }> = async (c) => {
     // Generate a fact about the location using Cloudflare AI
     let locationFact = null;
     try {
-      // @ts-ignore - Cloudflare AI is available in the Workers runtime
       const ai = c.env.AI;
 
       if (ai) {
@@ -86,11 +89,7 @@ export const getWeatherByLocation: Handler<{ Bindings: Env }> = async (c) => {
       },
     });
   } catch (error) {
-    if (error instanceof ApiException) {
-      throw error;
-    }
-
     console.error("Error in getWeatherByLocation:", error);
-    throw new ApiException("Internal server error");
+    return c.json({ success: false, error: "Internal server error" }, 500);
   }
 };

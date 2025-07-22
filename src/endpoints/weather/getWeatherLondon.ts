@@ -1,5 +1,4 @@
 import { Handler } from "hono";
-import { ApiException } from "chanfana";
 import { WeatherApiResponse } from "../../types";
 
 /**
@@ -8,14 +7,19 @@ import { WeatherApiResponse } from "../../types";
  */
 export const getWeatherLondon: Handler<{ Bindings: Env }> = async (c) => {
   try {
+    // JWT authentication is handled by middleware
+
     // Fetch weather data from OpenWeatherMap API
-    const apiKey = c.env.OPENWEATHER_API_KEY || "demo"; // Fallback to demo key
+    const apiKey = c.env.OPENWEATHER_API_KEY || "demo";
     const weatherResponse = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?q=London,uk&units=metric&appid=${apiKey}`
     );
 
     if (!weatherResponse.ok) {
-      throw new ApiException("Failed to fetch weather data for London");
+      return c.json(
+        { success: false, error: "Failed to fetch weather data for London" },
+        500
+      );
     }
 
     const weatherData = (await weatherResponse.json()) as WeatherApiResponse;
@@ -38,11 +42,7 @@ export const getWeatherLondon: Handler<{ Bindings: Env }> = async (c) => {
       },
     });
   } catch (error) {
-    if (error instanceof ApiException) {
-      throw error;
-    }
-
     console.error("Error in getWeatherLondon:", error);
-    throw new ApiException("Internal server error");
+    return c.json({ success: false, error: "Internal server error" }, 500);
   }
 };

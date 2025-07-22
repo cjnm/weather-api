@@ -1,5 +1,4 @@
 import { Handler } from "hono";
-import { ApiException } from "chanfana";
 import { z } from "zod";
 import { verifyPassword } from "../../utils/auth";
 
@@ -20,11 +19,14 @@ export const login: Handler<{ Bindings: Env }> = async (c) => {
     const result = loginSchema.safeParse(body);
 
     if (!result.success) {
-      throw new ApiException({
-        code: 400,
-        message: "Invalid request body",
-        details: result.error.errors,
-      });
+      return c.json(
+        {
+          success: false,
+          error: "Invalid request body",
+          details: result.error.errors,
+        },
+        400
+      );
     }
 
     const { username, password } = result.data;
@@ -37,20 +39,23 @@ export const login: Handler<{ Bindings: Env }> = async (c) => {
       .first();
 
     if (!user) {
-      throw new ApiException({
-        code: 401,
-        message: "Invalid username or password",
-      });
+      return c.json(
+        { success: false, error: "Invalid username or password" },
+        401
+      );
     }
 
     // Verify the password
-    const isPasswordValid = await verifyPassword(password, user.password_hash);
+    const isPasswordValid = await verifyPassword(
+      password,
+      String(user?.password_hash)
+    );
 
     if (!isPasswordValid) {
-      throw new ApiException({
-        code: 401,
-        message: "Invalid username or password",
-      });
+      return c.json(
+        { success: false, error: "Invalid username or password" },
+        401
+      );
     }
 
     // Generate a JWT token
@@ -127,14 +132,7 @@ export const login: Handler<{ Bindings: Env }> = async (c) => {
       },
     });
   } catch (error) {
-    if (error instanceof ApiException) {
-      throw error;
-    }
-
     console.error("Error in login:", error);
-    throw new ApiException({
-      code: 500,
-      message: "Internal server error",
-    });
+    return c.json({ success: false, error: "Internal server error" }, 500);
   }
 };

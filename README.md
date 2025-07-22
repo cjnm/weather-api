@@ -71,7 +71,6 @@ A simple weather API built with Cloudflare Workers that provides weather informa
 
 5. Update the `wrangler.jsonc` file with your project details:
    - Change the `name` field if you want a different subdomain
-   - Update the `account_id` field with your Cloudflare account ID (found in the Cloudflare dashboard)
 
 ### Development
 
@@ -131,9 +130,12 @@ You can monitor your Worker and view logs in the Cloudflare Dashboard:
 2. Navigate to Workers & Pages
 3. Select your worker to view metrics, logs, and settings
 
-## OpenAPI Documentation
+## API Documentation
 
-The API includes OpenAPI/Swagger documentation available at the root URL of your deployed Worker.
+The API includes OpenAPI/Swagger documentation available at the `/docs` endpoint of your deployed Worker.
+
+- Main API: `https://your-worker-url.workers.dev/`
+- Documentation: `https://your-worker-url.workers.dev/docs`
 
 ## Technologies Used
 

@@ -1,13 +1,24 @@
+import { fromHono } from "chanfana";
 import { Hono } from "hono";
 import { getWeatherByLocation } from "./getWeatherByLocation";
 import { getWeatherLondon } from "./getWeatherLondon";
 import { jwtAuth } from "../../middleware/jwtAuth";
 
 // Create a router for weather endpoints
-export const weatherRouter = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env }>();
 
-// Public endpoint - Get weather by location
+// Apply JWT middleware to the London endpoint
+app.use("/london", jwtAuth());
+
+export const weatherRouter = fromHono(app, {
+  schema: {
+    info: {
+      title: "Weather Endpoints",
+      version: "1.0.0",
+    },
+  },
+});
+
+// Register endpoints
 weatherRouter.get("/:location", getWeatherByLocation);
-
-// Protected endpoint - Get weather in London (requires JWT)
-weatherRouter.get("/london", jwtAuth(), getWeatherLondon);
+weatherRouter.get("/london", getWeatherLondon);

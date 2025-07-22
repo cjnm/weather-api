@@ -1,5 +1,4 @@
 import { Handler } from "hono";
-import { ApiException } from "chanfana";
 import { z } from "zod";
 import { hashPassword } from "../../utils/auth";
 
@@ -21,11 +20,14 @@ export const signup: Handler<{ Bindings: Env }> = async (c) => {
     const result = signupSchema.safeParse(body);
 
     if (!result.success) {
-      throw new ApiException({
-        code: 400,
-        message: "Invalid request body",
-        details: result.error.errors,
-      });
+      return c.json(
+        {
+          success: false,
+          error: "Invalid request body",
+          details: result.error.errors,
+        },
+        400
+      );
     }
 
     const { username, email, password } = result.data;
@@ -38,10 +40,10 @@ export const signup: Handler<{ Bindings: Env }> = async (c) => {
       .first();
 
     if (existingUser) {
-      throw new ApiException({
-        code: 409,
-        message: "Username or email already exists",
-      });
+      return c.json(
+        { success: false, error: "Username or email already exists" },
+        409
+      );
     }
 
     // Hash the password
@@ -55,10 +57,7 @@ export const signup: Handler<{ Bindings: Env }> = async (c) => {
       .run();
 
     if (!result2.success) {
-      throw new ApiException({
-        code: 500,
-        message: "Failed to create user",
-      });
+      return c.json({ success: false, error: "Failed to create user" }, 500);
     }
 
     // Return success response
@@ -74,14 +73,7 @@ export const signup: Handler<{ Bindings: Env }> = async (c) => {
       201
     );
   } catch (error) {
-    if (error instanceof ApiException) {
-      throw error;
-    }
-
     console.error("Error in signup:", error);
-    throw new ApiException({
-      code: 500,
-      message: "Internal server error",
-    });
+    return c.json({ success: false, error: "Internal server error" }, 500);
   }
 };
